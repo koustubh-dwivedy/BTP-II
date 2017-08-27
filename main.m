@@ -124,11 +124,11 @@ function vector = F(t,y)
 
 	eta_he = 0.0000187; %http://www.engineeringtoolbox.com/gases-absolute-dynamic-viscosity-d_1888.html
 	eta_air = 0.0000173; %http://www.engineeringtoolbox.com/gases-absolute-dynamic-viscosity-d_1888.html
-	eta_r114 = ;
+	eta_r114 = 0.000010412; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane
 
 	Pr_a = 0.71;
 	Pr_he = 0.68; %http://www.mhtl.uwaterloo.ca/old/onlinetools/airprop/airprop.html
-	Pr_r114 = ;
+	Pr_r114 = 0.739; %http://www.ethermo.us/ShowDetail41.htm
 
 	m_sys = 3.0054;
 	m_helium = 0.409;
@@ -182,27 +182,27 @@ function vector = F(t,y)
 	r_e = 0.18 + 0.0039*percent_cloud_cover;
 	T_BB_val = T_BB(y(2), percent_cloud_cover);
 
-	r_pw = ;
-	r_sw = ;
-	r_pwsol = ;
-	r_swsol = ;
+	r_pw = 0.127;
+	r_sw = 0.127;
+	r_pwsol = 0.114;
+	r_swsol = 0.114;
 
-	tau_pw = ;
-	tau_sw = ;
-	tau_pwsol = ;
-	tau_swsol = ;
+	tau_pw = 0.98; %at wavenumber 500 (10000/18.3) (ref actual paper and this->) http://people.csail.mit.edu/jaffer/FreeSnell/polyethylene.html
+	tau_sw = 0.98; %at wavenumber 500 (10000/18.3) (ref actual paper and this->) http://people.csail.mit.edu/jaffer/FreeSnell/polyethylene.html
+	tau_pwsol = 0.82; %at wavenumber 4000 (10000000/2500) (ref actual paper and this->) http://people.csail.mit.edu/jaffer/FreeSnell/polyethylene.html
+	tau_swsol = 0.82; %at wavenumber 4000 (10000000/2500) (ref actual paper and this->) http://people.csail.mit.edu/jaffer/FreeSnell/polyethylene.html
 
-	epsilon_pg = ;
-	epsilon_pw = ;
-	epsilon_sg = ;
-	epsilon_sw = ;
-	epsilon_sl = ;
+	epsilon_pg = 0.0003;
+	epsilon_pw = 0.031;
+	epsilon_sg = 0.60;
+	epsilon_sw = 0.031;
+	epsilon_sl = 0.95;
 
-	alpha_pg = ;
-	alpha_pw = ;
-	alpha_sg = ;
-	alpha_sw = ;
-	alpha_sl = ;
+	alpha_pg = 0.003;
+	alpha_pw = 0.001;
+	alpha_sg = 0.00184;
+	alpha_sw = 0.001;
+	alpha_sl = 0.003;
 
 	epsilon_pint = epsilon_pg*epsilon_pw/(1 - r_pw*(1 - epsilon_pg));
 	epsilon_pweff = epsilon_pw*(1 + (tau_pw*(1 - epsilon_pg))/(1 - r_pw*(1 - epsilon_pg)));
@@ -241,4 +241,12 @@ function vector = F(t,y)
 	a*q_dot_sl/latent_heat_vap_r114];
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[t y]=ode45(F,[0 7200], []);
+[t y]=ode45(F,[0 7200], [0 500 300 300 300 300 300 0]);
+% y(1)-> dz/dt
+% y(2)-> z
+% y(3)-> T_pg
+% y(4)-> T_pf
+% y(5)-> T_sg
+% y(6)-> T_sl
+% y(7)-> T_sf
+% y(8)-> m_sl
