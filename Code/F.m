@@ -1,4 +1,4 @@
-function vector = F(t,y)
+function vec = F(t,y)
 	liq_r114_density = 1518.093; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane
 	g = 9.81;
 	R_helium = 2077;
@@ -118,13 +118,13 @@ function vector = F(t,y)
 	q_dot_sl = (G*alpha_sleff*(0.5 + r_e) + epsilon_sleff*sigma*(T_BB_val^4 - y(6)^4) + CH_lfa*(temp_amb - y(6)))*S_sl;
 	q_dot_sf = (G*alpha_sweff*(0.25 + 0.5*r_e) + epsilon_sint*sigma*(y(5)^4 - y(7)^4) - epsilon_sweff*sigma*(y(7)^4) + epsilon_sweff*sigma*(T_BB_val^4))*S_s + (CH_sgf*(y(5) - y(7)) + CH_sfa*(temp_amb - y(7)))*S_sg;
 
-	vector = [
-	(g*(density_amb*(vol_primary + vol_secondary) - m_sys) - 0.5*density_amb*c_D*y(1)*abs(y(1))*pi*radius_primary*radius_primary)/(m_sys + c_M*density_amb*(vol_primary + vol_secondary));
-	y(1);
-	(q_dot_pg - density_amb*g*y(1)*vol_primary)/(m_helium*c_p_he);
-	q_dot_pf/(c_p_polyethylene*m_pf);
-	c*(q_dot_sg - density_amb*g*y(1)*vol_secondary)/(c_p_r114_gas*((m_freon - y(8))));
-	b*q_dot_sl/(y(8)*c_p_r114_liq);
-	q_dot_sf/(m_sf*c_p_polyethylene);
-	a*q_dot_sl/latent_heat_vap_r114];
+	vec(1) = (g*(density_amb*(vol_primary + vol_secondary) - m_sys) - 0.5*density_amb*c_D*y(1)*abs(y(1))*pi*radius_primary*radius_primary)/(m_sys + c_M*density_amb*(vol_primary + vol_secondary));
+	vec(2) = y(1);
+	vec(3) = (q_dot_pg - density_amb*g*y(1)*vol_primary)/(m_helium*c_p_he);
+	vec(4) = q_dot_pf/(c_p_polyethylene*m_pf);
+	vec(5) = c*(q_dot_sg - density_amb*g*y(1)*vol_secondary)/(c_p_r114_gas*((m_freon - y(8))));
+	vec(6) = b*q_dot_sl/(y(8)*c_p_r114_liq);
+	vec(7) = q_dot_sf/(m_sf*c_p_polyethylene);
+	vec(8) = a*q_dot_sl/latent_heat_vap_r114;
+    vec = vec';
 end
