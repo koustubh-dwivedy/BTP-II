@@ -1,7 +1,7 @@
 global state;
 state = [0, 0, 1]; %because T_boil =276.6K and initial conditions are at 300K
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function f = switch_master(T_sl, T_sg, T_boil, m_sl, m_s)
+function [a b c] = switch_master(T_sl, T_sg, T_boil, m_sl, m_s)
 	global state;
 	m_buffer = 0.05*m_s;
 	if (state(1) == 0 && state(2) == 1 && state(3) == 0)
@@ -19,7 +19,9 @@ function f = switch_master(T_sl, T_sg, T_boil, m_sl, m_s)
 			state = [1, 0, 1];
 		end
 	end
-	f = [state(1), state(2), state(3)];
+	a = state(1);
+	b = state(2);
+	c = state(3);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function f = density(x)
@@ -216,7 +218,7 @@ function vector = F(t,y)
 	CH_pfa = Nu_pfa(vol_primary, density_amb, 2*radius_primary, abs(y(1)), eta_air, g, y(4), temp_amb, Pr_a)*k_air/(2*radius_primary);
 	CH_lfa = Nu_lfa(density_amb, (S_sl*2/(pi*W)), abs(y(1)), eta_air, g, y(7), temp_amb, Pr_a)*k_air/(S_sl*2/(pi*W));
 	CH_sgf = Nu_sgf(rho_r114, eta_r114, g, L, y(7), y(5), Pr_r114)*k_r114/L;
-	CH_sfa = Nu_sfa(density_amb, eta_air, g, L, y(7), temp_amb, vel, Pr_a)*k_air/L;
+	CH_sfa = Nu_sfa(density_amb, eta_air, g, L, y(7), temp_amb, abs(y(1)), Pr_a)*k_air/L;
 
 	alpha_pgeff = alpha_pg*tau_pwsol/(1 - r_pwsol*(1 - alpha_pg));
 	alpha_pweff = alpha_pw*(1 + (tau_pwsol*(1 - alpha_pg))/(1 - r_pwsol*(1 - alpha_pg)));
