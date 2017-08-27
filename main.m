@@ -45,14 +45,74 @@ function f = T_BB(height, percent_cloud_cover)
 	end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f = cloud_cover(height)
+	f = 68;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f = Nu_pfa(V_p, rho_air, dia, vel, eta_air, g, T_film, T_gas, Pr_a)
+	Re = rho_air*dia*vel/eta_air;
+	Gr = ((rho_air/eta_air)^2)*g*(dia^3)*(abs(T_film - T_gas)/T_gas);
+	if V_p < 53800
+		Nu_1 = 0.37*(Re^0.6);
+	else
+		Nu_1 = 0.74*(Re^0.6);
+	end
+	Nu_2 = 2 + 0.6*((Gr*Pr_a)^0.25);
+	f = max([Nu_1, Nu_2]);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f = Nu_pgf(rho_he, eta_he, g, dia, T_film, T_gas, Pr_he)
+	Gr = ((rho_he/eta_he)^2)*g*(dia^3)*(abs(T_film - T_gas)/T_gas);
+	Rn = Gr*Pr_he;
+	if Rn < (1.34681*(10^8))
+		f = 2.5*(2 + 0.6*(Rn^0.25));
+	else
+		f = 0.325*(Rn^(1/3));
+	end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f = Nu_lfa(rho_air, dia, vel, eta_air, g, T_film, T_gas, Pr_a)
+	Re = rho_air*dia*vel/eta_air;
+	Gr = ((rho_air/eta_air)^2)*g*(dia^3)*(abs(T_film - T_gas)/T_gas);
+	Rn = Gr*Pr_a;
+	if Re < 1297.742
+		Nu_1 = 0.38 + 0.44*(Re^0.5);
+	else
+		Nu_1 = 0.22*(Re^0.6);
+	end
+	Nu_2 = (0.6 + 0.322*(Rn^(1/6)))^2;
+	f = max([Nu_1, Nu_2]);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f = Nu_sgf(rho_r114, eta_r114, g, L, T_film, T_gas, Pr_r114)
+	Gr = ((rho_r114/eta_r114)^2)*g*(L^3)*(abs(T_film - T_gas)/T_gas);
+	Rn = Gr*Pr_r114;
+	Nu_T = 0.515*(Rn^0.25);
+	Nu_l = 2.8/(log(1 + 2.8/Nu_T));
+	Nu_t = 0.103*(Rn^(1/3));
+	f = (Nu_t^6 + Nu_l^6)^(1/6);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function f = Nu_sfa(rho_air, eta_air, g, len, T_film, T_gas, vel, Pr_a)
+	Re = rho_air*len*vel/eta_air;
+	Gr = ((rho_air/eta_air)^2)*g*(len^3)*(abs(T_film - T_gas)/T_gas);
+	Rn = Gr*Pr_a;
+	if Re < 487508.3
+		Nu_1 = 0.5924*(Re^0.5);
+	else
+		Nu_1 = 0.033*(Re^0.8) - 758.3;
+	end
+
+	Nu_T = 0.515*(Rn^0.25);
+	Nu_l = 2.8/(log(1 + 2.8/Nu_T));
+	Nu_t = 0.103*(Rn^(1/3));
+	Nu_2 = (Nu_t^6 + Nu_l^6)^(1/6);
+	f = max([Nu_1, Nu_2]);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function vector = F(t,y)
-	g = 9.81;
-	m_sys = 3.0054;
-	m_helium = 0.409;
-	m_pf = 0.815;
-	m_sf = 0.157;
-	m_freon = 1.000;
 	liq_r114_density = 1518.093; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane
+	g = 9.81;
 	R_helium = 2077;
 	R_freon = 48.644;
 	c_D = 0.8;
@@ -60,12 +120,32 @@ function vector = F(t,y)
 	L = 3; % Length of Secondary Balloon %Approximated from image of ALICE0/D in paper
 	W = 0.9*3/3.1; % Width of Secondary Balloon %Approximated from image of ALICE0/D in paper
 	T_boil = 276.6;
+	latent_heat_vap_r114 = 135939; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane %Gas property at 15 degree Celsius
+
+	eta_he = 0.0000187; %http://www.engineeringtoolbox.com/gases-absolute-dynamic-viscosity-d_1888.html
+	eta_air = 0.0000173; %http://www.engineeringtoolbox.com/gases-absolute-dynamic-viscosity-d_1888.html
+	eta_r114 = ;
+
+	Pr_a = 0.71;
+	Pr_he = 0.68; %http://www.mhtl.uwaterloo.ca/old/onlinetools/airprop/airprop.html
+	Pr_r114 = ;
+
+	m_sys = 3.0054;
+	m_helium = 0.409;
+	m_pf = 0.815;
+	m_sf = 0.157;
+	m_freon = 1.000;
+
 	c_p_he = 5193; %J/(Kg.K)
 	c_p_polyethylene = 1650; %http://www.tainstruments.com/pdf/literature/TA227.pdf
 	%c_p_polyethylene = ; % Assumed Mol weight of % Came by averaging Cp of branched polyethylene (LDPE) at 256K(260) and 223K(220) (US Standard Atmosphere Temp at 5km and 10km resp). There's scope of improving this as a constant value is incorrect.
 	c_p_r114_gas = 689.56; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane %Gas property at 15 degree Celsius
-	latent_heat_vap_r114 = 135939; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane %Gas property at 15 degree Celsius
 	c_p_r114_liq = 982; %Cp exp (experimental) at 20.5deg Celsius. http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=910720
+
+	k_air = 0.022; %http://www.engineeringtoolbox.com/thermal-conductivity-d_429.html
+	k_he = 0.142; %http://www.engineeringtoolbox.com/thermal-conductivity-d_429.html
+	k_r114 = 0.009702; %https://encyclopedia.airliquide.com/12-dichloro-1122-tetrafluoroethane
+
 	% y(1)-> dz/dt
 	% y(2)-> z
 	% y(3)-> T_pg
@@ -74,42 +154,75 @@ function vector = F(t,y)
 	% y(6)-> T_sl % multiply by b
 	% y(7)-> T_sf
 	% y(8)-> m_sl % multiply by a
+
 	[a, b, c] = switch_master(y(6), y(5), T_boil, y(8), m_freon);
 	density_amb = density(y(2));
 	temp_amb = temperature(y(2));
 	pressure_amb = pressure(y(2));
 	liq_r114_vol = y(8)/liq_r114_density;
+
 	vol_primary = temp_amb*m_helium*R_helium/pressure_amb;
 	vol_secondary = temp_amb*(m_freon - y(8))*R_freon/pressure_amb;
+
+	rho_he = m_helium/vol_primary;
+	rho_r114 = (m_freon - y(8))/vol_secondary;
+
 	radius_primary = nthroot((3*vol_primary)/(4*pi),1/3);
 	radius_secondary = nthroot((3*vol_secondary)/(4*pi),1/3);
+
 	S_p = 4*pi*radius_primary*radius_primary;
 	S_s = 4*pi*radius_secondary*radius_secondary;
 	S_sg = 2*L*W;
 	S_sl = (pi/2)*W*nthroot((8*liq_r114_vol)/(pi*W),1/2);
 
-	percent_cloud_cover = ;
+	percent_cloud_cover = cloud_cover(y(2));
 
 	G = 1396;
 	sigma = 5.670367*(10^(-8));
 	r_e = 0.18 + 0.0039*percent_cloud_cover;
 	T_BB_val = T_BB(y(2), percent_cloud_cover);
-	epsilon_pint = ;
-	epsilon_pweff = ;
-	epsilon_pgeff = ;
-	epsilon_sint = ;
-	epsilon_sgeff = ;
-	epsilon_sleff = ;
-	epsilon_sweff = ;
-	CH_pgf = ;
-	CH_pfa = ;
-	CH_lfa = ;
-	CH_sgf = ;
-	alpha_pgeff = ;
-	alpha_pweff = ;
-	alpha_sgeff = ;
-	alpha_sleff = ;
-	alpha_sweff = ;
+
+	r_pw = ;
+	r_sw = ;
+	r_pwsol = ;
+	r_swsol = ;
+
+	tau_pw = ;
+	tau_sw = ;
+	tau_pwsol = ;
+	tau_swsol = ;
+
+	epsilon_pg = ;
+	epsilon_pw = ;
+	epsilon_sg = ;
+	epsilon_sw = ;
+	epsilon_sl = ;
+
+	alpha_pg = ;
+	alpha_pw = ;
+	alpha_sg = ;
+	alpha_sw = ;
+	alpha_sl = ;
+
+	epsilon_pint = epsilon_pg*epsilon_pw/(1 - r_pw*(1 - epsilon_pg));
+	epsilon_pweff = epsilon_pw*(1 + (tau_pw*(1 - epsilon_pg))/(1 - r_pw*(1 - epsilon_pg)));
+	epsilon_pgeff = epsilon_pg*tau_pw/(1 - r_pw*(1 - epsilon_pg));
+	epsilon_sint = epsilon_sg*epsilon_sw/(1 - r_sw*(1 - epsilon_sg));
+	epsilon_sweff = epsilon_sw*(1 + (tau_sw*(1 - epsilon_sg))/(1 - r_sw*(1 - epsilon_sg)));
+	epsilon_sgeff = epsilon_sg*tau_sw/(1 - r_sw*(1 - epsilon_sg));
+	epsilon_sleff = epsilon_sl*tau_sw/(1 - r_sw*(1 - epsilon_sl)); % MIGHT BE WRONG. SIMPLY EXTRAPOLATED
+
+	CH_pgf = Nu_pgf(rho_he, eta_he, g, 2*radius_primary, y(4), y(3), Pr_he)*k_he/(2*radius_primary);
+	CH_pfa = Nu_pfa(vol_primary, density_amb, 2*radius_primary, abs(y(1)), eta_air, g, y(4), temp_amb, Pr_a)*k_air/(2*radius_primary);
+	CH_lfa = Nu_lfa(density_amb, (S_sl*2/(pi*W)), abs(y(1)), eta_air, g, y(7), temp_amb, Pr_a)*k_air/(S_sl*2/(pi*W));
+	CH_sgf = Nu_sgf(rho_r114, eta_r114, g, L, y(7), y(5), Pr_r114)*k_r114/L;
+	CH_sfa = Nu_sfa(density_amb, eta_air, g, L, y(7), temp_amb, vel, Pr_a)*k_air/L;
+
+	alpha_pgeff = alpha_pg*tau_pwsol/(1 - r_pwsol*(1 - alpha_pg));
+	alpha_pweff = alpha_pw*(1 + (tau_pwsol*(1 - alpha_pg))/(1 - r_pwsol*(1 - alpha_pg)));
+	alpha_sgeff = alpha_sg*tau_swsol/(1 - r_swsol*(1 - alpha_sg));
+	alpha_sweff = alpha_sw*(1 + (tau_swsol*(1 - alpha_sg))/(1 - r_swsol*(1 - alpha_sg)));
+	alpha_sleff = alpha_sl*tau_swsol/(1 - r_swsol*(1 - alpha_sl)); % MIGHT BE WRONG. SIMPLY EXTRAPOLATED
 
 	q_dot_pg = (G*alpha_pgeff*(1 + r_e) + epsilon_pint*sigma*(y(3)^4 - y(4)^4) - CH_pgf*(y(3) - y(4)) - epsilon_pgeff*sigma*(y(3)^4) + epsilon_pgeff*sigma*(T_BB_val^4))*S_p;
 	q_dot_pf = (G*alpha_pweff*(0.25 + 0.5*r_e) + epsilon_pint*sigma*(y(3)^4 - y(4)^4) + CH_pgf*(y(3) - y(4)) + CH_pfa*(temp_amb - y(4)) - epsilon_pweff*sigma*(y(4)^4) + epsilon_pweff*sigma*(T_BB_val^4))*S_p;
